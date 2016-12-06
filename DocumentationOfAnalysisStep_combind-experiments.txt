@@ -1,0 +1,88 @@
+The Documentation of Analysis Workflow of RNA reads from four experiments:
+healthy paired fecal and plasma samples, diabetes study, serum sRNAs, exosomal RNAs
+
+Author: Dilmurat Yusuf
+
+Date: 06/14
+
+*goal: generates the distribution of most abundant sequences with given lengths
+X1: /home/dilmurat/Work/combined-experiments
+scp bigbug:/home/ydilimulati/Work/smallRNA_blood_feces/1.preprocess/1.cleaned/collapsed_fasta_CPM/read_len_sample_distri.csv 0.read_len_sample_distri-LCSB.csv
+scp bigbug:/home/ydilimulati/Work/proof_concept-diabetes-feces/1.preprocess/1.cleaned/collapsed_fasta_CPM/read_len_sample_distri.csv 0.read_len_sample_distri-POC_feces.csv
+scp bigbug:/home/ydilimulati/Work/proof_concept-diabetes-plasma/1.preprocess/1.cleaned/collapsed_fasta_CPM/read_len_sample_distri.csv 0.read_len_sample_distri-POC_plasma.csv
+scp bigbug:/home/ydilimulati/Work/serum_sRNA_from_Dhahbi/1.preprocess/1.cleaned/collapsed_fasta_CPM/read_len_sample_distri.csv 0.read_len_sample_distri-Dhahbi_serum.csv
+scp bigbug:/home/ydilimulati/Work/exosome_public/1.preprocess/1.cleaned/collapsed_fasta_CPM/read_len_sample_distri.csv 0.read_len_sample_distri-exosome.csv
+scp bigbug:/home/ydilimulati/Work/HIV-sRNA_SRP042053/1.preprocess/1.cleaned/collapsed_fasta_CPM/read_len_sample_distri.csv 0.read_len_sample_distri_HIV-CD4T.csv
+
+~/bin/cross_profile-sRNA-combined.r
+       -> 0.lib_profile.tiff 0.lib_profile-CPM1-len45.tiff
+       
+*goal: reads are selected if they have abundance >= 50cpm in any libraries
+bigbug: ~/Work/combined-experiments
+select_read-20140804.py -c 50  /home/ydilimulati/Work/exosome_public/1.preprocess/1.cleaned/collapsed_fasta_CPM/*CPM.fa /home/ydilimulati/Work/HIV-sRNA_SRP042053/1.preprocess/1.cleaned/collapsed_fasta_CPM/*CPM.fa /home/ydilimulati/Work/proof_concept-diabetes-feces/1.preprocess/1.cleaned/collapsed_fasta_CPM/*CPM.fa /home/ydilimulati/Work/proof_concept-diabetes-plasma/1.preprocess/1.cleaned/collapsed_fasta_CPM/*CPM.fa /home/ydilimulati/Work/serum_sRNA_from_Dhahbi/1.preprocess/1.cleaned/collapsed_fasta_CPM/*CPM.fa /home/ydilimulati/Work/smallRNA_blood_feces/1.preprocess/1.cleaned/collapsed_fasta_CPM/*CPM.fa /home/ydilimulati/Work/smallRNA_blood_time_series/plasma_exosome/1.preprocess/1.cleaned/collapsed_fasta_CPM/*CPM.fa /home/ydilimulati/Work/smallRNA_blood_time_series/plasma/1.preprocess/1.cleaned/collapsed_fasta_CPM/*CPM.fa  &> select_read_50cpm.log
+
+*goal: check the repeatability of 1.replicates: cpm fold changes at one condition 
+bigbug: mkdir /home/ydilimulati/Work/combined-experiments/1.replicates
+ln -s ~/Work/proof_concept-diabetes-plasma/1.preprocess/1.cleaned/collapsed_fasta_CPM/*pDN*REP*_CPM_filter.fa  .
+ln -s /home/ydilimulati/Work/HIV-sRNA_SRP042053/1.preprocess/1.cleaned/collapsed_fasta_CPM/*CPM_filter.fa .
+#!note: file ids are changed to generated figures
+replicate-distri-20140818.py *_CPM.fa &> replicate-distri-20140818.log
+       -> replicate_fold_change.csv
+       -> single_cases.csv
+       
+X1: /home/dilmurat/Work/combined-experiments
+scp  bigbug:/home/ydilimulati/Work/combined-experiments/1.replicates/replicate_fold_change.csv 1.replicate_fold_change.csv
+scp  bigbug:/home/ydilimulati/Work/combined-experiments/1.replicates/single_cases.csv 1.single_cases.csv
+/home/dilmurat/bin/cross_profile-sRNA-combined.r
+       -> 1.replicate_fold_change.tiff 1.single_cases.tiff
+
+*goal: distribtution of RNA family, sequences of big players and addition
+bigbug: /home/ydilimulati/Work/combined-experiments/2.exRNA_healthy_blood
+ln -s ~/Work/proof_concept-diabetes-plasma/4.annotation/2.profile/7.normalization_TPM/read_info.csv T1D_read_info.csv.csv
+ln -s /home/ydilimulati/Work/exosome_public/4.annotation/2.profile/7.normalization_TPM/read_info.csv exosom_read_info.csv.csv
+ln -s ~/Work/smallRNA_blood_feces/4.annotation/2.profile/7.normalization_TPM/read_info.csv  Healthy-LCSB_read_info.csv.csv
+ln -s /home/ydilimulati/Work/HIV-sRNA_SRP042053/4.annotation/2.profile/7.normalization_TPM/read_info.csv HIV_read_info.csv.csv
+ln -s ~/Work/smallRNA_blood_time_series/plasma/4.annotation/2.profile/7.normalization_TPM/read_info.csv plasma-time-series_read_info.csv
+ln -s ~/Work/smallRNA_blood_time_series/plasma_exosome/4.annotation/2.profile/7.normalization_TPM/read_info.csv exosome-time-series_read_info.csv
+
+#!!! note: replace size-distri-20140916.py  with size-distri-20141119.py to accomadate new features in read_info.csv
+bigbug:/home/ydilimulati/Work/combined-experiments/2.exRNA_healthy_blood/
+/usr/bin/time -o stdtime.txt -a -v  size-distri-20141119.py   Healthy-LCSB_read_info.csv.csv  HIV_read_info.csv.csv plasma-time-series_read_info.csv exosome-time-series_read_info.csv &> size-distri-20141119.log &
+       -> sample_distri-all_players.csv
+       -> sample_distri-read_len.csv
+       
+X1:  /home/dilmurat/Work/combined-experiments
+scp bigbug:/home/ydilimulati/Work/combined-experiments/2.exRNA_healthy_blood/sample_distri-read_len.csv  2.sample_distri-read_len.csv
+/home/dilmurat/bin/cross_profile-sRNA-combined.r
+scp bigbug:/home/ydilimulati/Work/combined-experiments/2.exRNA_healthy_blood/sample_distri-all_players.csv  2.sample_distri-all_players.csv
+/home/dilmurat/bin/cross_profile-sRNA-combined.r
+       -rw-r--r-- 1 dilmurat dilmurat   13260 Nov 23 22:05 expression_pattern_10plasma_HIV.pdf
+       -rw-r--r-- 1 dilmurat dilmurat   11953 Nov 23 22:04 expression_pattern_time_series-1.pdf
+       -rw-r--r-- 1 dilmurat dilmurat   14845 Nov 23 22:04 expression_pattern_time_series-2.pdf
+       -rw-r--r-- 1 dilmurat dilmurat   48927 Nov 23 22:04 key_seq_correlation.pdf
+       -rw-r--r-- 1 dilmurat dilmurat    9942 Nov 23 22:04 key_seq_correlation-plasma-exosome.pdf
+       -rw-r--r-- 1 dilmurat dilmurat  116935 Nov 23 22:02 RNA_GC.pdf
+
+scp bigbug:/home/ydilimulati/Work/smallRNA_blood_time_series/plasma_exosome/sample_statistics.csv sample_statistics-exosome-series.csv
+scp bigbug:/home/ydilimulati/Work/smallRNA_blood_time_series/plasma/sample_statistics.csv sample_statistics-plasma-series.csv
+scp bigbug:/home/ydilimulati/Work/smallRNA_blood_feces/sample_statistics.csv sample_statistics-plasma.csv
+
+              
+*goal: evaluate the effect of miRNAs in pathways
+X1: /home/dilmurat/Work/combined-experiments
+http://diana.imis.athena-innovation.gr/DianaTools/index.php?r=mirpath#mirnas=hsa-miR-192-5p;hsa-miR-25-3p;hsa-miR-142-5p;hsa-miR-30e-5p;hsa-miR-22-3p;hsa-miR-423-5p;hsa-miR-92a-3p;hsa-miR-103a-3p;hsa-miR-486-5p;hsa-miR-182-5p;hsa-miR-16-5p;hsa-miR-15a-5p;hsa-miR-451a;hsa-miR-27b-3p;hsa-miR-126-5p;hsa-miR-191-5p;hsa-miR-10a-5p;hsa-miR-143-3p;hsa-miR-21-5p;hsa-miR-10b-5p&methods=microT-CDS;microT-CDS;microT-CDS;microT-CDS;microT-CDS;microT-CDS;microT-CDS;microT-CDS;microT-CDS;microT-CDS;microT-CDS;microT-CDS;microT-CDS;microT-CDS;microT-CDS;microT-CDS;microT-CDS;microT-CDS;microT-CDS;microT-CDS&selection=2
+extract_mirpath_info.py miRPath_pathway_miRNA.txt > miRPath_pathway_miRNA.csv
+/home/dilmurat/bin/cross_profile-sRNA-combined.r
+       
+*goal: generates figures for the publication
+
+~/bin/cross_profile-sRNA-combined.r
+       -> dataframes and matrics required by other scripts, preliminary figures
+       -> processing_profile.pdf
+~/bin/key_seq_corM_corPE-20150112.r -> fig2_key_seq_corM_corPE-20150311.pdf (inkscape modified), fig4_inter-intra-var.pdf
+~/bin/mir_pathway-bubble-20150309.r -> fig3_Y4_mir486_dynamics.pdf, fig5_pathway.pdf (inkscape modified)
+~/bin/exRNA_charateristics-20150311.r -> fig1_exRNA_charateristics-20150311.pdf
+pdfunite fig1_exRNA_charateristics-20150311-inkscape-mod.pdf fig2_key_seq_corM_corPE-20150311-inkscape-mod.pdf  fig3_Y4_mir486_dynamics-inkscape-mod.pdf   fig4_inter-intra-var.pdf fig5_pathway-inkscape-mod.pdf diurnal-signatures-figures-20150324.pdf
+
+~/bin/mir_pathway-bubble-20150109.r -> dynamics_time_9seqs.pdf
+~/bin/key_seq_corM_corPE-20150112.r -> key_seq_var_day.pdf
